@@ -1,0 +1,23 @@
+services:
+  app:
+    build: ./app
+    ports:
+      - "8080:8080"
+    environment:
+      - ConnectionStrings__Postgres=Host=db;Port=5432;Database=soilmonitor;Username=soil;Password=${DB_PASSWORD}
+      - Pushover__ApiToken=${PUSHOVER_TOKEN}
+      - Pushover__UserKey=${PUSHOVER_USER}
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16
+    environment:
+      - POSTGRES_DB=soilmonitor
+      - POSTGRES_USER=soil
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
