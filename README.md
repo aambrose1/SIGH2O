@@ -43,8 +43,8 @@ const char* WS_HOST        = "your_server_ip";  // server IP address
 const int   WS_PORT        = 8080;              // container's exposed port
 ```
 
-## future improvements !! 🌈
-- setup nginx (reverse proxy) to hide the container's ports from others on the network
-- whitelist ESP32 address 
-- deploy app to Railway or similar for **FREE** remote monitoring 
+## future improvements !! 🌈 
+- setup nginx (reverse proxy) to hide the container's ports from others on the network **(done)**
+- whitelist ESP32 address (**in progress**)
+- deploy app using free DigitalPlat domain registration! **(*paused* but done)**
 - filterable timeline in chart by date
