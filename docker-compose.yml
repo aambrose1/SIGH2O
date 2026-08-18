@@ -12,17 +12,25 @@ services:
 
   app:
     build: ./app
-    ports:
+    expose:
       - "8080"
     environment:
       - ConnectionStrings__Postgres=Host=db;Port=5432;Database=soilmonitor;Username=soil;Password=${DB_PASSWORD}
       - Pushover__ApiToken=${PUSHOVER_TOKEN}
       - Pushover__UserKey=${PUSHOVER_USER}
+    volumes:
+      - dataprotection:/root/.aspnet/DataProtection-Keys
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:16
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soil -d soilmonitor"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     environment:
       - POSTGRES_DB=soilmonitor
       - POSTGRES_USER=soil
@@ -32,3 +40,4 @@ services:
 
 volumes:
   pgdata:
+  dataprotection:

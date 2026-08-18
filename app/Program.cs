@@ -3,18 +3,22 @@ using app.Components;
 using app.Data;
 using app.Services;
 using app.WebSockets;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Services ─────────────────────────────────────────────────────────────────
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+});
 builder.Services.AddHttpClient();
 
 builder.Services.AddDbContext<AppDbContext>(opts =>
     opts.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
-
 builder.Services.AddSingleton<SensorService>();
 builder.Services.AddSingleton<NotificationService>();
 builder.Services.AddHostedService<WatchdogService>();
@@ -23,12 +27,23 @@ builder.Services.AddScoped<WebSocketHandler>();
 // ── App ───────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto
+};
+
+forwardedHeadersOptions.KnownNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+
+app.UseForwardedHeaders(forwardedHeadersOptions);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
-
 app.UseStaticFiles();
 app.UseAntiforgery();
 
@@ -51,6 +66,10 @@ using (var scope = app.Services.CreateScope())
 app.UseWebSockets();
 app.Map("/ws", async context =>
 {
+	var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+	logger.LogInformation("WS request. IsWebSocket: {IsWs}, Headers: {Headers}",
+        context.WebSockets.IsWebSocketRequest,
+        string.Join(", ", context.Request.Headers.Select(h => $"{h.Key}={h.Value}")));
     if (!context.WebSockets.IsWebSocketRequest)
     {
         context.Response.StatusCode = 400;
