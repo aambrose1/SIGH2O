@@ -1,0 +1,252 @@
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+    --color-ground:    #1a1610;   /* near-black, dark topsoil */
+    --color-surface:   #231f18;   /* card surface */
+    --color-border:    #3a3428;   /* subtle rule */
+    --color-accent:    #b8934a;   /* dried-grass ochre */
+    --color-accent-lo: #7a5f2a;   /* muted ochre for fills */
+    --color-alert:     #c0392b;   /* drought red */
+    --color-text:      #e8dfc8;   /* warm off-white */
+    --color-muted:     #8a7d62;   /* secondary text */
+
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-mono:    'DM Mono', 'Courier New', monospace;
+}
+
+/* ── Reset & base ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    background: var(--color-ground);
+    color:      var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* ── Shell ─────────────────────────────────────────────────────────────────── */
+.shell {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+.site-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 28px 0 32px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 36px;
+}
+
+.site-name {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--color-accent);
+    letter-spacing: 0.01em;
+}
+
+.site-sub {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+/* ── Alert banner ──────────────────────────────────────────────────────────── */
+.alert-banner {
+    background: #2c1210;
+    border: 1px solid var(--color-alert);
+    border-radius: 4px;
+    color: #e87b6f;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alert-icon {
+    font-size: 1.1rem;
+}
+
+/* ── Reading card ──────────────────────────────────────────────────────────── */
+.reading-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 28px 28px 24px;
+    margin-bottom: 28px;
+    transition: border-color 0.3s;
+}
+
+.reading-card--alert {
+    border-color: var(--color-alert);
+}
+
+.reading-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    margin-bottom: 10px;
+}
+
+.reading-value {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 16px;
+}
+
+.reading-number {
+    font-family: var(--font-display);
+    font-size: 4.5rem;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--color-accent);
+}
+
+.reading-unit {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 300;
+    color: var(--color-muted);
+}
+
+.reading-value--empty .reading-number {
+    color: var(--color-muted);
+    font-size: 3rem;
+}
+
+/* moisture bar */
+.reading-bar-track {
+    height: 4px;
+    background: var(--color-border);
+    border-radius: 2px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.reading-bar-fill {
+    height: 100%;
+    background: var(--color-accent);
+    border-radius: 2px;
+    transition: width 0.6s ease;
+    min-width: 2px;
+}
+
+.reading-time {
+    font-size: 0.72rem;
+    color: var(--color-muted);
+    letter-spacing: 0.04em;
+}
+
+/* ── Chart section ─────────────────────────────────────────────────────────── */
+.chart-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 22px 22px 16px;
+    margin-bottom: 28px;
+}
+
+.chart-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    margin-bottom: 16px;
+}
+
+.chart {
+    width: 100%;
+    height: 160px;
+    display: block;
+}
+
+.chart-axis {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    color: var(--color-muted);
+    margin-top: 8px;
+    letter-spacing: 0.03em;
+}
+
+.chart-empty {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    padding: 24px 0;
+    text-align: center;
+}
+
+/* ── Log section ───────────────────────────────────────────────────────────── */
+.log-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 22px;
+}
+
+.log-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    margin-bottom: 14px;
+}
+
+.log-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.log-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 50px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.78rem;
+    color: var(--color-text);
+    column-gap: 16px;
+}
+
+.log-row:last-child {
+    border-bottom: none;
+}
+
+.log-row--header {
+    color: var(--color-muted);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.log-row--alert {
+    color: #e87b6f;
+}
+
+/* ── Dashboard wrapper ─────────────────────────────────────────────────────── */
+.dashboard {
+    animation: fade-in 0.4s ease;
+}
+
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .reading-number { font-size: 3.2rem; }
+    .log-row { grid-template-columns: 1fr 64px 40px; font-size: 0.72rem; }
+}

@@ -1,0 +1,43 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - app
+
+  app:
+    build: ./app
+    expose:
+      - "8080"
+    environment:
+      - ConnectionStrings__Postgres=Host=db;Port=5432;Database=soilmonitor;Username=soil;Password=${DB_PASSWORD}
+      - Pushover__ApiToken=${PUSHOVER_TOKEN}
+      - Pushover__UserKey=${PUSHOVER_USER}
+    volumes:
+      - dataprotection:/root/.aspnet/DataProtection-Keys
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soil -d soilmonitor"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      - POSTGRES_DB=soilmonitor
+      - POSTGRES_USER=soil
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+  dataprotection:

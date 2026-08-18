@@ -1,0 +1,212 @@
+﻿@page "/"
+@using app.Models
+@using app.Services
+@inject SensorService State
+@implements IDisposable
+
+<div class="dashboard">
+
+    @* ── Alert banner ── *@
+    @if (State.IsAlert)
+    {
+        <div class="alert-banner">
+            <span class="alert-icon">⚠</span>
+            Moisture is critically low — water your plant now.
+        </div>
+    }
+
+    @* ── Current reading ── *@
+    <section class="reading-card @(State.IsAlert ? "reading-card--alert" : "")">
+        <div class="reading-label">current moisture</div>
+        @if (State.Latest is not null)
+        {
+            <div class="reading-value">
+                <span class="reading-number">@State.Latest.MoistureValue.ToString("F1")</span>
+                <span class="reading-unit">%</span>
+            </div>
+            <div class="reading-bar-track">
+                <div class="reading-bar-fill"
+                     style="width: @(Math.Clamp(State.Latest.MoistureValue, 0, 100).ToString("F1"))%">
+                </div>
+            </div>
+            <div class="reading-time">
+                @{
+                    var elapsed = DateTime.UtcNow - State.Latest.TimestampUtc;
+                    var totalMinutes = Math.Floor(elapsed.TotalMinutes);
+                    var hours = (int)Math.Floor(elapsed.TotalHours);
+                    var minutes = (int)(elapsed.TotalMinutes - (hours * 60));
+                    
+                    string timeAgoText;
+                    if (totalMinutes == 0)
+                    {
+                        timeAgoText = "just now";
+                    }
+                    else if (hours == 0)
+                    {
+                        timeAgoText = $"{minutes} {(minutes == 1 ? "minute" : "minutes")} ago";
+                    }
+                    else
+                    {
+                        timeAgoText = $"{hours} {(hours == 1 ? "hour" : "hours")} {minutes} {(minutes == 1 ? "minute" : "minutes")} ago";
+                    }
+                }
+                sampled @State.Latest.TimestampUtc.ToLocalTime().ToString("MMM d · h:mm tt") (@timeAgoText)
+            </div>
+        }
+        else
+        {
+            <div class="reading-value reading-value--empty">—</div>
+            <div class="reading-time">waiting for first reading…</div>
+        }
+    </section>
+
+    @* ── History timeline ── *@
+    <section class="chart-section">
+        <div class="chart-label">moisture over time</div>
+        @if (State.History.Count > 1)
+        {
+            <svg class="chart" viewBox="0 0 600 160" preserveAspectRatio="none"
+                 xmlns="http://www.w3.org/2000/svg">
+
+                @* Y-axis labels and grid lines *@
+                @{
+                    var yAxisValues = new[] { 100, 75, 50, 25, 0 };
+                    foreach (var pct in yAxisValues)
+                    {
+                        var yPos = ChartH - PadY - (pct / 100.0) * (ChartH - 2 * PadY);
+                        <text>
+                        <text x="2" y="@(yPos + 2)" font-size="10" fill="var(--color-muted)" opacity="0.6">@pct%</text>
+                        </text>
+                        <line x1="0" y1="@yPos" x2="600" y2="@yPos" stroke="var(--color-muted)" stroke-width="0.5" opacity="0.2" />
+                    }
+                }
+
+                @* Threshold line at 20% *@
+                <line x1="0" y1="@ThresholdY" x2="600" y2="@ThresholdY"
+                      stroke="var(--color-alert)" stroke-width="1"
+                      stroke-dasharray="4 4" opacity="0.6" />
+
+                @* Filled area *@
+                <path d="@AreaPath" fill="var(--color-accent)" opacity="0.15" />
+
+                @* Line *@
+                <path d="@LinePath" fill="none"
+                      stroke="var(--color-accent)" stroke-width="2"
+                      stroke-linejoin="round" stroke-linecap="round" />
+
+                @* Dots for each point *@
+                @foreach (var (cx, cy) in ChartPoints)
+                {
+                    <circle cx="@cx" cy="@cy" r="2.5"
+                            fill="var(--color-accent)" opacity="0.8" />
+                }
+
+            </svg>
+
+            <div class="chart-axis">
+                <span>@State.History.First().TimestampUtc.ToLocalTime().ToString("MMM d h tt")</span>
+                <span>20% threshold</span>
+                <span>@State.History.Last().TimestampUtc.ToLocalTime().ToString("MMM d h tt")</span>
+            </div>
+        }
+        else
+        {
+            <div class="chart-empty">Not enough readings yet to draw a timeline.</div>
+        }
+    </section>
+
+    @* ── Reading log ── *@
+    <section class="log-section">
+        <div class="log-label">reading log</div>
+        <div class="log-table">
+            <div class="log-row log-row--header">
+                <span>time</span>
+                <span>moisture</span>
+                <span>status</span>
+            </div>
+            @foreach (var entry in State.History.Reverse().Take(20))
+            {
+                <div class="log-row @(entry.MoistureValue < SensorService.AlertThreshold ? "log-row--alert" : "")">
+                    <span>@entry.TimestampUtc.ToLocalTime().ToString("MMM d · h:mm tt")</span>
+                    <span>@entry.MoistureValue.ToString("F1")%</span>
+                    <span>@(entry.MoistureValue < SensorService.AlertThreshold ? "dry" : "ok")</span>
+                </div>
+            }
+        </div>
+    </section>
+
+</div>
+
+@code {
+    // ── Chart geometry helpers ────────────────────────────────────────────────
+    private const double ChartW = 600;
+    private const double ChartH = 160;
+    private const double PadX   = 8;
+    private const double PadY   = 12;
+
+    private double ThresholdY =>
+        ChartH - PadY - (SensorService.AlertThreshold / 100.0) * (ChartH - 2 * PadY);
+
+    private IEnumerable<(double cx, double cy)> ChartPoints
+    {
+        get
+        {
+            var history = State.History;
+            if (history.Count == 0) yield break;
+            int n = history.Count;
+            for (int i = 0; i < n; i++)
+            {
+                double x = PadX + (double)i / (n - 1) * (ChartW - 2 * PadX);
+                double y = ChartH - PadY - (history[i].MoistureValue / 100.0) * (ChartH - 2 * PadY);
+                yield return (x, y);
+            }
+        }
+    }
+
+    private string LinePath
+    {
+        get
+        {
+            var pts = ChartPoints.ToList();
+            if (pts.Count == 0) return "";
+            var sb = new System.Text.StringBuilder();
+            sb.Append($"M {pts[0].cx:F1},{pts[0].cy:F1}");
+            foreach (var (cx, cy) in pts.Skip(1))
+                sb.Append($" L {cx:F1},{cy:F1}");
+            return sb.ToString();
+        }
+    }
+
+    private string AreaPath
+    {
+        get
+        {
+            var pts = ChartPoints.ToList();
+            if (pts.Count == 0) return "";
+            var sb = new System.Text.StringBuilder();
+            sb.Append($"M {pts[0].cx:F1},{ChartH - PadY:F1}");
+            sb.Append($" L {pts[0].cx:F1},{pts[0].cy:F1}");
+            foreach (var (cx, cy) in pts.Skip(1))
+                sb.Append($" L {cx:F1},{cy:F1}");
+            sb.Append($" L {pts[^1].cx:F1},{ChartH - PadY:F1} Z");
+            return sb.ToString();
+        }
+    }
+
+    // ── Real-time subscription ────────────────────────────────────────────────
+    protected override void OnInitialized()
+    {
+        State.OnChange += OnStateChanged;
+    }
+
+    private void OnStateChanged()
+    {
+        // OnChange fires on a background thread — marshal back to the render thread
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        State.OnChange -= OnStateChanged;
+    }
+}
