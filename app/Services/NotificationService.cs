@@ -28,36 +28,34 @@ public class NotificationService
             return;
         }
 
-        var pushoverToken = _config["Pushover:ApiToken"];
-        var pushoverUser  = _config["Pushover:UserKey"];
+        var ntfyTopic = _config["Ntfy:Topic"];
 
-        if (string.IsNullOrEmpty(pushoverToken) || string.IsNullOrEmpty(pushoverUser))
+        if (string.IsNullOrEmpty(ntfyTopic))
         {
-            _logger.LogWarning("Pushover credentials not configured. Skipping alert.");
+            _logger.LogWarning("Ntfy topic not configured. Skipping alert.");
             return;
         }
 
+        var ntfyServer = _config["Ntfy:ServerUrl"] ?? "https://ntfy.sh";
         var client = _httpFactory.CreateClient();
-        var payload = new FormUrlEncodedContent(new[]
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{ntfyServer}/{ntfyTopic}")
         {
-            new KeyValuePair<string, string>("token",   pushoverToken),
-            new KeyValuePair<string, string>("user",    pushoverUser),
-            new KeyValuePair<string, string>("title",   "⚠ Low Soil Moisture"),
-            new KeyValuePair<string, string>("message",
-                $"Moisture dropped to {moisturePercent:F1}% — your plant needs water."),
-            new KeyValuePair<string, string>("priority", "1"),
-        });
+            Content = new StringContent($"Moisture dropped to {moisturePercent:F1}% — your plant needs water.")
+        };
+        request.Headers.Add("Title", "Low Soil Moisture");
+        request.Headers.Add("Priority", "high");
+        request.Headers.Add("Tags", "warning,droplet");
 
         try
         {
-            var response = await client.PostAsync("https://api.pushover.net/1/messages.json", payload);
+            var response = await client.SendAsync(request);
             response.EnsureSuccessStatusCode();
             _lastAlertSent = DateTime.UtcNow;
             _logger.LogInformation("Low-moisture alert sent at {Time}.", _lastAlertSent);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send Pushover notification.");
+            _logger.LogError(ex, "Failed to send ntfy notification.");
         }
     }
 
@@ -71,35 +69,34 @@ public class NotificationService
             return;
         }
 
-        var pushoverToken = _config["Pushover:ApiToken"];
-        var pushoverUser  = _config["Pushover:UserKey"];
+        var ntfyTopic = _config["Ntfy:Topic"];
 
-        if (string.IsNullOrEmpty(pushoverToken) || string.IsNullOrEmpty(pushoverUser))
+        if (string.IsNullOrEmpty(ntfyTopic))
         {
-            _logger.LogWarning("Pushover credentials not configured. Skipping alert.");
+            _logger.LogWarning("Ntfy topic not configured. Skipping alert.");
             return;
         }
 
+        var ntfyServer = _config["Ntfy:ServerUrl"] ?? "https://ntfy.sh";
         var client = _httpFactory.CreateClient();
-        var payload = new FormUrlEncodedContent(new[]
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{ntfyServer}/{ntfyTopic}")
         {
-            new KeyValuePair<string, string>("token",   pushoverToken),
-            new KeyValuePair<string, string>("user",    pushoverUser),
-            new KeyValuePair<string, string>("title",   "⚠ Soil Monitor Offline"),
-            new KeyValuePair<string, string>("message", "No reading received in over 5 hours — check your device."),
-            new KeyValuePair<string, string>("priority", "1"),
-        });
+            Content = new StringContent("No reading received in over 5 hours — check your device.")
+        };
+        request.Headers.Add("Title", "Soil Monitor Offline");
+        request.Headers.Add("Priority", "high");
+        request.Headers.Add("Tags", "warning,satellite");
 
         try
         {
-            var response = await client.PostAsync("https://api.pushover.net/1/messages.json", payload);
+            var response = await client.SendAsync(request);
             response.EnsureSuccessStatusCode();
             _lastOfflineAlertSent = DateTime.UtcNow;
             _logger.LogInformation("Device offline alert sent at {Time}.", _lastOfflineAlertSent);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send offline Pushover notification.");
+            _logger.LogError(ex, "Failed to send offline ntfy notification.");
         }
     }
 }

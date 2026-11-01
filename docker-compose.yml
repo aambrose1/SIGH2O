@@ -16,8 +16,8 @@ services:
       - "8080"
     environment:
       - ConnectionStrings__Postgres=Host=db;Port=5432;Database=soilmonitor;Username=soil;Password=${DB_PASSWORD}
-      - Pushover__ApiToken=${PUSHOVER_TOKEN}
-      - Pushover__UserKey=${PUSHOVER_USER}
+      - Ntfy__Topic=${NTFY_TOPIC}
+      - Ntfy__ServerUrl=${NTFY_SERVER_URL:-https://ntfy.sh}
     volumes:
       - dataprotection:/root/.aspnet/DataProtection-Keys
     depends_on:

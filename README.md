@@ -12,7 +12,7 @@ A small IoT project for tracking soil moisture in plants. Built using an ESP32, 
 ### software & services 🌺
 - [Docker](https://docs.docker.com/compose/install/) (to run app + database)
 - [Arduino IDE](https://www.arduino.cc/en/software) (for ESP32)
-- [Pushover](https://pushover.net/) account (for notifications)
+- [ntfy](https://ntfy.sh/) topic (for notifications) — no account needed, just pick a unique topic name
 
 ## getting started 🌞
 
@@ -30,8 +30,7 @@ A small IoT project for tracking soil moisture in plants. Built using an ESP32, 
 
 **.env** (project root)
 ```bash
-PUSHOVER_USER=your_pushover_user_key
-PUSHOVER_TOKEN=your_pushover_app_token
+NTFY_TOPIC=your_unique_ntfy_topic
 DB_PASSWORD=your_postgres_password
 ```
 
